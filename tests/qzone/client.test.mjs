@@ -110,6 +110,7 @@ test('并发失效读取共享初始化和续绑，使用 SDK 账号及票据重
     const sessions = []
     const page = { items: [] }
     const client = {
+        getSessionInfo() { return { accountId: grant.accountId } },
         async listFeeds() { if (++reads <= 2) auth(); return page },
         async updateSession(session) { sessions.push(session) },
         async close() {}
@@ -142,6 +143,39 @@ test('持续鉴权失败的读操作仅重放一次；普通读取异常不续�
         assert.deepEqual([reads, updates], failure instanceof QzoneAuthError ? [2, 1] : [1, 0])
         await manager.close()
     }
+})
+
+test('轮询在等待读取权限或续绑时被取消，不再发起动态读取', async () => {
+    const credentials = Promise.withResolvers()
+    const rebindStarted = Promise.withResolvers()
+    const renewed = Promise.withResolvers()
+    let reads = 0, acquires = 0
+    const manager = new QzoneManager({
+        acquire() {
+            if (++acquires === 1) return credentials.promise
+            rebindStarted.resolve()
+            return renewed.promise
+        },
+        createClient: () => ({
+            listFeeds() { reads++; auth() },
+            async updateSession() {},
+            async close() {}
+        }), logger, rebind
+    })
+    const first = new AbortController()
+    const initial = manager.listFeedPage({ scope: 'friends', signal: first.signal })
+    first.abort()
+    credentials.resolve(grant)
+    await assert.rejects(initial, { name: 'AbortError' })
+    assert.equal(reads, 0)
+    const second = new AbortController()
+    const retry = manager.listFeedPage({ scope: 'friends', signal: second.signal })
+    await rebindStarted.promise
+    second.abort()
+    renewed.resolve(grant)
+    await assert.rejects(retry, { name: 'AbortError' })
+    assert.equal(reads, 1)
+    await manager.close()
 })
 
 test('发布、评论、回复登录失效只续绑不重发，结果不确定时同样不重发', async () => {
@@ -212,6 +246,7 @@ test('续绑期间卸载，旧读操作不重放，不接收新发布，不再�
             return pending.promise
         },
         createClient: () => ({
+            getSessionInfo() { return { accountId: grant.accountId } },
             listFeeds() { reads++; auth() },
             async updateSession() { updates++ },
             async publishPost() { writes++ },

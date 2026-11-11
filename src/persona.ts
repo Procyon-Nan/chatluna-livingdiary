@@ -3,7 +3,7 @@ import type { PresetRecord } from '@chatluna/preset'
 import type {} from '@chatluna/prompt'
 
 /** 取预设自己声明的系统段，用框架变量环境渲染；不混入宿主全局提示或聊天记录。 */
-export async function renderDiaryPersona(ctx: Context, preset: PresetRecord, now: Date) {
+export async function renderPersona(ctx: Context, preset: PresetRecord, now: Date) {
     const env = await ctx.prompt.environmentOf({ now: +now, presetId: preset.id, botName: preset.name })
     const blocks = (ctx.presets.blocks(preset) ?? [])
         .filter(block => block.zone === 'system' && (block.role ?? 'system') === 'system')

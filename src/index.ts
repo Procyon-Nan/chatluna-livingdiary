@@ -3,7 +3,8 @@ import type { Config } from './config.js'
 import { registerPersonaSelector } from './config.js'
 import { registerCommands } from './commands/index.js'
 import { registerDailyDigest } from './daily-digest/index.js'
-import type { RuntimeReports } from './daily-digest/report.js'
+import { registerAutoInteraction } from './auto-interaction/index.js'
+import type { RuntimeReports } from './status.js'
 import { registerPublishTool } from './publishing/tool.js'
 import { createQzoneService } from './qzone/service.js'
 
@@ -16,7 +17,7 @@ export const inject = ['satori'] as const
 export function apply(ctx: Context, config: Config) {
     const qzone = createQzoneService(ctx, config)
     ctx.effect(() => () => qzone.close())
-    const reports: RuntimeReports = { digest: null }
+    const reports: RuntimeReports = { digest: null, interaction: null }
     ctx.inject(['schemas', 'presets'], registerPersonaSelector)
 
     ctx.plugin({
@@ -28,6 +29,11 @@ export function apply(ctx: Context, config: Config) {
         name: 'livingdiary-daily-digest',
         inject: ['livingmemory', 'presets', 'prompt', 'chatluna', 'ai'],
         apply: ctx => registerDailyDigest(ctx, config, qzone, reports)
+    })
+    ctx.plugin({
+        name: 'livingdiary-auto-interaction',
+        inject: ['satori', 'presets', 'prompt', 'chatluna', 'ai'],
+        apply: ctx => registerAutoInteraction(ctx, config, qzone, reports)
     })
     if (config.enablePublishTool && config.allowUserIds.length) {
         ctx.plugin({

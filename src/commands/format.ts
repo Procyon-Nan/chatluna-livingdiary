@@ -1,5 +1,7 @@
 import type { QzonePost } from 'qzone-sdk'
-import { dailyDigestResultLabels, type DailyDigestReport } from '../daily-digest/report.js'
+import { dailyDigestResultLabels } from '../daily-digest/report.js'
+import { formatInteractionLine } from '../auto-interaction/report.js'
+import type { RuntimeReports } from '../status.js'
 import { cookiePlatformLabel } from '../qzone/cookie-source.js'
 import type { LivingDiaryStatus } from '../qzone/service.js'
 
@@ -39,7 +41,7 @@ export function formatFeedList(items: readonly QzonePost[]): string {
 
 export function formatStatus(
     status: LivingDiaryStatus,
-    digest: DailyDigestReport | null
+    { digest, interaction }: RuntimeReports
 ): string {
     const lines: string[] = []
     lines.push(
@@ -80,5 +82,6 @@ export function formatStatus(
     } else {
         lines.push('每日日记：未运行')
     }
+    lines.push(formatInteractionLine(interaction?.() ?? null))
     return lines.join('\n')
 }

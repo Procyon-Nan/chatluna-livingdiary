@@ -1,5 +1,6 @@
 import type { Logger } from 'cordis'
-import type { DailyDigestReport, DailyDigestTrigger, RuntimeReports } from './report.js'
+import type { RuntimeReports } from '../status.js'
+import type { DailyDigestReport, DailyDigestTrigger } from './report.js'
 
 export interface DigestTime {
     hour: number

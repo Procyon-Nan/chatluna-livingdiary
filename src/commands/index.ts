@@ -5,7 +5,7 @@ import type { Config } from '../config.js'
 import { isUserAllowed } from '../access.js'
 import { publishPost, readableError } from '../publishing/publish.js'
 import type { QzoneService } from '../qzone/service.js'
-import type { RuntimeReports } from '../daily-digest/report.js'
+import type { RuntimeReports } from '../status.js'
 import { formatFeedList, formatStatus } from './format.js'
 
 export const FEEDS_LIMIT_MAX = 10
@@ -75,6 +75,6 @@ export function registerCommands(ctx: Context, config: Config, service: QzoneSer
         })
     ctx.command('qzone.status', '查看 QQ 空间登录态', { owner })
         .action(({ session }) => isUserAllowed(session?.userId, config.allowUserIds, session?.platform)
-            ? formatStatus(service.status(), reports.digest)
+            ? formatStatus(service.status(), reports)
             : denial)
 }

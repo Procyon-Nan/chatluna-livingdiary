@@ -5,7 +5,8 @@ import {
 } from 'qzone-sdk'
 import { CookieAcquireError, NoBotAvailableError } from '../qzone/cookie-source.js'
 import { QzoneWriteAuthError, type QzoneManager } from '../qzone/manager.js'
-import { ImageReadError, readPublishImage } from './media.js'
+import { ImageReadError } from '../image.js'
+import { readPublishImage } from './media.js'
 
 export interface PublishInput {
     content: string

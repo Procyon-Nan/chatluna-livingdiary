@@ -31,7 +31,9 @@ test('基础命令独立运行；日记随记忆服务启停并保留上次结�
 
     assert.ok(ctx.$commander.get('qzone.status'))
     assert.match(await run('10002'), /未授权/)
-    assert.match(await run('10001'), /登录态|机器人/)
+    const status = await run('10001')
+    assert.match(status, /登录态|机器人/)
+    assert.match(status, /自动互动：配置不完整.*互动模型.*互动白名单/)
     assert.equal(ctx.$commander.get('qzone.digest'), undefined)
     const options = await ctx.schemas.resolve('livingdiary-persona')
     assert.ok(options.list.some(option => option.value === 'diary' && option.meta.description === '星星'))

@@ -1,7 +1,6 @@
 import { setTimeout as delay } from 'node:timers/promises'
 import type { Context } from 'cordis'
-import type {} from '@chatluna/core'
-import type {} from '@chatluna/ai-runtime/ops'
+import { callModel } from '../model.js'
 import type { ChatSpecMessage, ChatToolCallBlock, ToolSpec } from '@chatluna/ai'
 import { digestToolName } from './prompt.js'
 
@@ -66,21 +65,14 @@ export async function decideDigest(ctx: Context, model: string, prompts: { syste
         try {
             const messages = [task, ...feedback]
             if (debug) ctx.logger.info('每日总结：model.prompt（%s，第 %d 次）\n%s', model, attempt, JSON.stringify({ system: prompts.systemPrompt, messages }))
-            const run = ctx.chatluna.chat({ model, system: prompts.systemPrompt, messages,
-                toolSpecs: [decisionTool], toolChoice: 'required', purpose: 'livingdiary.digest', cache: false })
-            const abort = () => run.abort()
-            signal.addEventListener('abort', abort, { once: true })
+            const result = await callModel(ctx, { model, system: prompts.systemPrompt, messages,
+                toolSpecs: [decisionTool], toolChoice: 'required', purpose: 'livingdiary.digest', cache: false }, signal)
+            if (debug) ctx.logger.info('每日总结：model.response（%s，第 %d 次）\n%s', model, attempt, JSON.stringify(result.content))
             try {
-                const result = await run
-                signal.throwIfAborted()
-                if (debug) ctx.logger.info('每日总结：model.response（%s，第 %d 次）\n%s', model, attempt, JSON.stringify(result.content))
-                try { return decisionOf(result.toolCalls) }
-                catch (error) {
-                    lastReason = (error as Error).message
-                    feedback = correction(result.toolCalls, lastReason)
-                }
-            } finally {
-                signal.removeEventListener('abort', abort)
+                return decisionOf(result.toolCalls)
+            } catch (error) {
+                lastReason = (error as Error).message
+                feedback = correction(result.toolCalls, lastReason)
             }
         } catch (error) {
             signal.throwIfAborted()

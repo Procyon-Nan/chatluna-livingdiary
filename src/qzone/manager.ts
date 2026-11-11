@@ -13,7 +13,7 @@ import {
     type ReplyOptions,
     type SessionInfo
 } from 'qzone-sdk'
-import type { CookieBot, QzoneCookieGrant } from './cookie-source.js'
+import { canonicalQQ, type CookieBot, type QzoneCookieGrant } from './cookie-source.js'
 import type { Logger } from 'cordis'
 import {
     RebindController,
@@ -86,12 +86,20 @@ export class QzoneManager {
 
     /** 读取动态页；登录态失效时续绑成功后重放一次读取。 */
     listFeedPage(query: ListFeedsOptions): Promise<FeedPage> {
-        return this.#runRead('读取动态', (client) => client.listFeeds(query))
+        return this.#runRead('读取动态', query.signal, async client => {
+            if (query.scope !== 'self') return client.listFeeds(query)
+            // SDK 的 self 读取空间首页，会混入好友动态。个人主页按绑定账号取帖。
+            const accountId = client.getSessionInfo().accountId
+            if (!accountId) throw new Error('空间登录态没有绑定账号。')
+            const userId = canonicalQQ(accountId)
+            const page = await client.listFeeds({ ...query, scope: 'profile', userId })
+            return { ...page, items: page.items.filter(post => canonicalQQ(post.authorId) === userId) }
+        })
     }
 
     /** 读取动态详情；登录态失效时续绑成功后重放一次读取。 */
     getPost(request: GetPostOptions): Promise<QzonePost> {
-        return this.#runRead('读取动态详情', (client) =>
+        return this.#runRead('读取动态详情', request.signal, (client) =>
             client.getPost(request)
         )
     }
@@ -161,21 +169,26 @@ export class QzoneManager {
 
     async #runRead<T>(
         phase: string,
+        signal: AbortSignal | undefined,
         operation: (client: QzoneClient) => Promise<T>
     ): Promise<T> {
+        signal?.throwIfAborted()
         const client = await this.#getClient()
         this.#assertOpen()
+        signal?.throwIfAborted()
         try {
             return await operation(client)
         } catch (error) {
             if (!(error instanceof QzoneAuthError)) {
                 throw error
             }
+            signal?.throwIfAborted()
             const rebound = await this.#tryRebind(client, phase)
             if (!rebound) {
                 throw error
             }
             this.#assertOpen()
+            signal?.throwIfAborted()
             return operation(client)
         }
     }
@@ -186,6 +199,7 @@ export class QzoneManager {
         signal: AbortSignal | undefined,
         operation: (client: QzoneClient) => Promise<T>
     ): Promise<T> {
+        signal?.throwIfAborted()
         const client = await this.#getClient()
         this.#assertOpen()
         signal?.throwIfAborted()
@@ -193,6 +207,7 @@ export class QzoneManager {
             return await operation(client)
         } catch (error) {
             if (error instanceof QzoneAuthError) {
+                signal?.throwIfAborted()
                 const rebound = await this.#tryRebind(client, phase)
                 throw new QzoneWriteAuthError(kind, rebound)
             }

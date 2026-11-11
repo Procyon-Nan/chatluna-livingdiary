@@ -1,13 +1,6 @@
-export const digestToolName = 'publish_daily_digest'
-const escapeXmlText = (value: string): string =>
-    value.replace(/&/gu, '&amp;').replace(/</gu, '&lt;').replace(/>/gu, '&gt;')
+import { escapeXmlText, formatXmlBlock } from '../prompt-format.js'
 
-/** 以同名开闭标签包裹转义后的数据块正文，产出逐行数组。 */
-const formatXmlBlock = (name: string, value: string): string[] => [
-    `<${name}>`,
-    escapeXmlText(value),
-    `</${name}>`
-]
+export const digestToolName = 'publish_daily_digest'
 
 export interface DigestMemoryEntry {
     readonly createdAt: Date

@@ -12,7 +12,7 @@ const midnight = new Date(2026, 10, 11)
 const settings = { presetId: 'p', model: '@large', memoryLimit: 100 }
 const text = '第一段。\n\n' + '写得长一点。'.repeat(30)
 const call = input => ({ type: 'tool-call', toolCallId: 'result', toolName: 'publish_daily_digest', input })
-const result = input => ({ toolCalls: [call(input)], content: [call(input)] })
+const result = input => ({ finish: { kind: 'tool-calls' }, toolCalls: [call(input)], content: [call(input)] })
 const quiet = { info() {}, warn() {}, error() {} }
 
 async function fixture(t, kind = 'chat') {

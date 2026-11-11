@@ -34,11 +34,11 @@
         "test": "npm run build && node --test \"tests/**/*.test.mjs\""
     },
     "dependencies": {
+        "@chatluna/transform-image": "2.0.0-alpha.0",
         "qzone-sdk": "^0.3.3",
         "schemastery": "^3.18.0"
     },
     "peerDependencies": {
-        "@satorijs/core": "^4.6.1",
         "@chatluna/agent": "*",
         "@chatluna/ai": "*",
         "@chatluna/ai-runtime": "*",
@@ -47,6 +47,7 @@
         "@chatluna/prompt": "*",
         "@chatluna/ui-schema-registry": "*",
         "@chatluna/utils": "*",
+        "@satorijs/core": "^4.6.1",
         "chatluna": "^2.0.0-alpha.0",
         "chatluna-plugin-livingmemory": ">=0.0.5",
         "cordis": "^4.0.0-rc.12"

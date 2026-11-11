@@ -2,7 +2,7 @@ import type { Context } from 'cordis'
 import type { QzoneManager } from '../qzone/manager.js'
 import { publishOutcomeMessages, readableError } from '../publishing/publish.js'
 import { decideDigest } from './model.js'
-import { renderDiaryPersona } from './persona.js'
+import { renderPersona } from '../persona.js'
 import { buildDigestPrompts, formatMemoryLines, type DigestMemoryEntry } from './prompt.js'
 import type { DailyDigestReport, DailyDigestResult, DailyDigestTrigger } from './report.js'
 
@@ -49,7 +49,7 @@ export async function runDailyDigest(ctx: Context, qzone: Pick<QzoneManager, 'pu
     if (!memories.length) return report('skipped-empty', '当日无记忆。')
 
     let persona: string
-    try { persona = await renderDiaryPersona(ctx, preset, startedAt) }
+    try { persona = await renderPersona(ctx, preset, startedAt) }
     catch {
         signal.throwIfAborted()
         return report('preset-missing', '无法渲染空间预设的人设。')

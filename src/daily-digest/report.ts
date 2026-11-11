@@ -18,10 +18,6 @@ export interface DailyDigestReport {
     readonly detail: string
 }
 
-export interface RuntimeReports {
-    digest: DailyDigestReport | null
-}
-
 export const dailyDigestResultLabels: Record<DailyDigestResult, string> = {
     published: '已发布',
     accepted: '空间已受理',

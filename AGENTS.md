@@ -42,14 +42,20 @@ LivingDiary 是 ChatLuna v2 的 QQ 空间插件，npm 包名为 `chatluna-plugin
 ```text
 livingdiary/
 ├── src/
-│   ├── index.ts     # 装配 QQ 空间客户端、命令、模型工具与每日日记
-│   ├── config.ts    # 空间账号、白名单、发布、续绑和日记配置
+│   ├── index.ts     # 装配空间客户端、命令、发布工具、日记与自动互动
+│   ├── config.ts    # 账号、模型、日记、互动及各自的授权设置
+│   ├── persona.ts   # 渲染空间日记与互动共用的人设
+│   ├── model.ts     # 随后台任务取消单步模型调用
+│   ├── image.ts     # 限制图片读取大小、下载时限和取消
+│   ├── prompt-format.ts # 提示词数据块的 XML 转义
+│   ├── status.ts    # 日记和自动互动向状态命令提供的报告
 │   ├── access.ts    # 校验请求来源平台和用户 QQ 号
 │   ├── qzone/       # 获取登录态、管理 SDK 客户端及续绑
 │   ├── commands/    # qzone 命令、动态和状态的展示
-│   ├── daily-digest/ # 日记调度、记忆筛选、预设渲染、模型决策与运行报告
+│   ├── daily-digest/ # 日记调度、记忆筛选、模型决策与运行报告
+│   ├── auto-interaction/ # 动态轮询、评论线程、媒体读取与互动决策
 │   └── publishing/  # 空间发布工具、配图读取及发布结果
-├── tests/           # 命令与工具授权、空间读写、每日日记和生命周期测试
+├── tests/           # 空间命令与工具、日记、自动互动和生命周期测试
 ├── scripts/clean.mjs # 清理编译产物与增量编译记录
 ├── package.json     # 包信息、导出入口、依赖与构建、发布脚本
 ├── tsconfig.json    # 插件的 TypeScript 配置
@@ -66,7 +72,7 @@ livingdiary/
 
 | 文档 | 内容 |
 | --- | --- |
-| [README.md](README.md) | 空间账号与白名单配置、命令、发布工具、每日日记、构建与发布方法 |
+| [README.md](README.md) | 配置空间账号、使用命令、撰写日记、自动评论和回复、构建与发布方法 |
 | [CHANGELOG.md](CHANGELOG.md) | 各版本的变更记录 |
 | [.agent/note/README.zh.md](.agent/note/README.zh.md) | Agent Note 的撰写格式、分类、状态转换和归档规则 |
 
