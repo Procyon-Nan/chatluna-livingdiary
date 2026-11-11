@@ -1,0 +1,48 @@
+{
+    "name": "chatluna-plugin-livingdiary",
+    "version": "0.0.0",
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org/",
+        "access": "public"
+    },
+    "description": "ChatLuna plugin livingdiary",
+    "type": "module",
+    "license": "AGPL-3.0-only",
+    "keywords": [
+        "chatluna-plugin"
+    ],
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./lib/index.d.ts",
+            "default": "./lib/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "lib",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json --listEmittedFiles",
+        "clean": "node scripts/clean.mjs",
+        "pub": "npm run clean && npm run build && npm publish"
+    },
+    "dependencies": {
+        "schemastery": "^3.18.0"
+    },
+    "peerDependencies": {
+        "chatluna": "^2.0.0-alpha.0",
+        "cordis": "^4.0.0-rc.12"
+    },
+    "devDependencies": {
+        "cordis": "^4.0.0-rc.12",
+        "typescript": "*"
+    },
+    "cordis": {
+        "description": {
+            "en": "ChatLuna plugin livingdiary"
+        }
+    }
+}
