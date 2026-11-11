@@ -28,7 +28,7 @@ The bot's posts come from the bound account's profile: the SDK's home feed also 
 
 ## Consequences
 
-The tool schema can remain in the model's cached request after the requester changes, but execution still requires permission from the current requester. Uncertain writes remain visible in the status report. Incomplete comment snapshots defer the decision until a later poll.
+While enabled, `qzone_publish` stays in the tool catalog even with an empty allowlist. Changing speakers leaves its definition unchanged. At execution, the framework's tool permission applies, and LivingDiary checks the requesting QQ account against the allowlist and rejects calls on behalf of a different speaker. Uncertain writes remain visible in the status report. Incomplete comment snapshots defer the decision until a later poll.
 
 ## Verification
 

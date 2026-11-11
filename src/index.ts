@@ -35,10 +35,10 @@ export function apply(ctx: Context, config: Config) {
         inject: ['satori', 'presets', 'prompt', 'chatluna', 'ai'],
         apply: ctx => registerAutoInteraction(ctx, config, qzone, reports)
     })
-    if (config.enablePublishTool && config.allowUserIds.length) {
+    if (config.enablePublishTool) {
         ctx.plugin({
             name: 'livingdiary-publish-tool',
-            inject: ['tools', 'agents'],
+            inject: ['tools'],
             apply: ctx => registerPublishTool(ctx, config, qzone)
         })
     }

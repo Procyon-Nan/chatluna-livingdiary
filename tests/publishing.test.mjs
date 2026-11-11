@@ -2,91 +2,70 @@ import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import test from 'node:test'
 import { Context } from 'cordis'
-import { Session } from '@chatluna/session'
+import * as diary from '../lib/index.js'
 import Tools from '@chatluna/tool'
 import Permissions from '@chatluna/permission'
 import { registerPublishTool } from '../lib/publishing/tool.js'
 import { publishPost } from '../lib/publishing/publish.js'
 
-test('真实工具调度仅允许本轮请求者本人发布，不能向同轮其他人借权限', async t => {
+test('工具常驻目录，发帖时按本次请求者授权，并遵守框架的工具权限', async t => {
     const ctx = new Context()
     t.after(() => ctx.fiber.dispose())
-    const session = new Session('diary-tool-test')
-    const location = { platform: 'onebot' }
-    let speakers = []
-    let writes = 0
-    const agent = { session, options: { location }, speakers: () => speakers }
-    ctx.provide('agents')
-    ctx.set('agents', { list: () => [agent] })
-    ctx.provide('permissions')
-    ctx.set('permissions', { define() {}, actorOf: Permissions.prototype.actorOf, levelOf: () => 1 })
+    await ctx.plugin(Permissions, { rules: [] })
     await ctx.plugin(Tools)
-    const plugin = await ctx.plugin({
-        name: 'livingdiary-test',
-        inject: ['tools', 'agents'],
-        apply(ctx) {
-            registerPublishTool(ctx, { allowUserIds: ['Alice'], enablePublishTool: true }, {
-                async publish() { writes++; return { outcome: 'verified' } }
-            })
-        }
+    const writes = []
+    const plugin = await ctx.plugin({ inject: ['tools'], apply(scope) {
+        registerPublishTool(scope, { allowUserIds: ['Alice'] }, {
+            async publish(post) { writes.push(post.content); return { outcome: 'verified' } }
+        })
+    } })
+    const entry = () => ctx.tools.catalog().find(item => item.definition.name === 'qzone_publish')
+    const definition = entry().definition
+    const run = (speakers, args = {}, actor) => ctx.tools.execute({
+        name: 'qzone_publish', args: { content: 'Hello', ...args }, speakers, actor, location: { platform: 'onebot' }
     })
-    const run = (args = {}, actor) => ctx.tools.execute({
-        name: 'qzone_publish', args: { content: 'Hello', ...args }, agent, location, speakers, actor
-    })
-    async function begin(users, target = agent) {
-        speakers = users
-        // 会话来源平台由 Agent 提供；跨平台定时唤醒由框架 wake.as 提供。
-        const input = users.map(speaker => speaker.platform
-            ? { source: { kind: 'plugin' }, meta: { wake: { as: speaker } } }
-            : { source: { kind: 'user' }, content: [], meta: {
-                sender: { id: speaker.user }, wake: { direct: speaker.addressed }
-            } })
-        await ctx.serial('agent/before-turn', { agent: target, turn: 1, input })
+    const alice = { user: 'Alice', addressed: true }, bob = { user: 'Bob', addressed: true }
+    const denied = async (...args) => {
+        const result = await run(...args)
+        assert.equal(result.ok, false)
+        assert.match(result.error.message, /白名单/)
     }
-    function visible() {
-        return ctx.tools.list(agent).some(tool => tool.name === 'qzone_publish')
-    }
-    await begin([{ user: 'Bob', addressed: true }, { user: 'Alice' }])
-    assert.equal(visible(), false)
-    assert.equal((await run({ for: 'Alice' })).ok, false)
-    await begin([])
-    assert.equal((await run({}, { user: 'Alice', platform: 'onebot' })).ok, false)
-    await begin([{ user: 'Alice', addressed: true, platform: 'discord' }])
-    assert.equal(visible(), false)
-    assert.equal((await run()).ok, false)
-    await begin([{ user: 'Alice', addressed: true }, { user: 'Bob', addressed: true }])
-    assert.equal(visible(), false)
-    assert.equal((await run({ for: 'Alice' })).ok, false)
-    await begin([{ user: 'Alice', addressed: true }, { user: 'Bob' }])
-    assert.equal(visible(), true)
-    assert.equal((await run({ for: 'Bob' })).value.outcome, 'failed')
-    assert.equal((await run({}, { user: 'Bob', platform: 'onebot' })).value.outcome, 'failed')
-    assert.equal((await run({ for: 'Bob' }, { user: 'Alice', platform: 'onebot' })).value.outcome, 'failed')
-    assert.equal((await run({}, { user: 'Alice', platform: 'discord' })).value.outcome, 'failed')
-    assert.equal(writes, 0)
-    assert.equal((await run()).value.outcome, 'verified')
-    assert.equal((await run({ for: 'Alice' })).value.outcome, 'verified')
-    assert.equal(writes, 2)
-    speakers = [{ user: 'Alice', addressed: true }, { user: 'Bob', addressed: true }]
-    assert.equal((await run({ for: 'Alice' })).value.outcome, 'failed')
-    assert.equal(writes, 2)
-    assert.equal(ctx.tools.list().some(tool => tool.name === 'qzone_publish'), false)
-    const other = { ...agent, session: new Session('other') }
-    assert.equal(ctx.tools.list(other).some(tool => tool.name === 'qzone_publish'), false)
-    await begin([{ user: 'Alice', addressed: true }], other)
-    assert.equal(ctx.tools.list(other).some(tool => tool.name === 'qzone_publish'), true)
-    ctx.emit('chatluna/agent-close', { agent: other })
-    assert.equal(ctx.tools.list(other).some(tool => tool.name === 'qzone_publish'), false)
-    ctx.emit('chatluna/agent-turn', { agent, reason: 'completed', steps: [] })
-    assert.equal(visible(), false)
-    await begin([{ user: 'Bob', addressed: true }])
-    assert.equal((await run()).error.code, 'NOT_VISIBLE')
-    await begin([{ user: 'Alice', addressed: true }])
-    await ctx.serial('agent/turn-failed', { agent }, new Error('test failure'))
-    assert.equal(visible(), false)
-    await begin([{ user: 'Alice', addressed: true }])
+
+    await denied([bob])
+    await denied([bob, { user: 'Alice' }], { for: 'Alice' })
+    await denied([], {}, { platform: 'onebot', user: 'Alice' })
+    await denied([{ ...alice, platform: 'discord' }])
+    await denied([alice, bob], { for: 'Alice' })
+    await denied([alice, { user: 'Bob' }], { for: 'Bob' })
+    await denied([alice], {}, { platform: 'onebot', user: 'Bob' })
+    await denied([alice, { user: 'Bob' }], { for: 'Bob' }, { platform: 'onebot', user: 'Alice' })
+    await denied([alice], {}, { platform: 'discord', user: 'Alice' })
+    assert.deepEqual(writes, [])
+    assert.equal((await run([alice, { user: 'Bob' }])).value.outcome, 'verified')
+    assert.equal((await run([alice], { for: 'Alice' })).value.outcome, 'verified')
+    ctx.permissions.rule({ id: 'deny-publish', permission: 'tool:qzone_publish', effect: 'deny' })
+    assert.equal((await run([alice])).ok, false)
+    assert.deepEqual(writes, ['Hello', 'Hello'])
+    assert.equal(entry().definition, definition)
     await plugin.dispose()
-    assert.equal(visible(), false)
+    assert.equal(entry(), undefined)
+})
+
+test('发布开关独立于白名单：空名单时目录可见但不能发帖，关闭后没有工具', async t => {
+    const ctx = new Context()
+    t.after(() => ctx.fiber.dispose())
+    ctx.provide('satori', { bots: [] })
+    await ctx.plugin(Tools)
+    const entry = () => ctx.tools.catalog().find(tool => tool.definition.name === 'qzone_publish')
+    const plugin = await ctx.plugin(diary)
+    assert.ok(entry())
+    const result = await ctx.tools.execute({ name: 'qzone_publish', args: { content: 'Hello' },
+        location: { platform: 'onebot' }, speakers: [{ user: 'Alice', addressed: true }] })
+    assert.equal(result.ok, false)
+    assert.match(result.error.message, /白名单/)
+    await plugin.dispose()
+    await ctx.plugin(diary, { enablePublishTool: false, allowUserIds: ['Alice'] })
+    assert.equal(entry(), undefined)
 })
 
 test('发布命令与工具共用图片读取；整批成功后只提交一次，不重发结果未知的写入', async t => {
