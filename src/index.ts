@@ -1,14 +1,29 @@
 import type { Context } from 'cordis'
-import Schema from 'schemastery'
+import type { Config } from './config.js'
+import { registerCommands } from './commands/index.js'
+import { registerPublishTool } from './publishing/tool.js'
+import { createQzoneService } from './qzone/service.js'
+
+export { Config } from './config.js'
 
 export const name = 'livingdiary'
 
-export const inject = ['chatluna'] as const
+export const inject = ['satori'] as const
 
-export interface Config {}
+export function apply(ctx: Context, config: Config) {
+    const qzone = createQzoneService(ctx, config)
+    ctx.effect(() => () => qzone.close())
 
-export const Config: Schema<Config> = Schema.object({})
-
-export function apply(ctx: Context) {
-    ctx.logger.info('livingdiary loaded')
+    ctx.plugin({
+        name: 'livingdiary-commands',
+        inject: ['koishi'],
+        apply: ctx => registerCommands(ctx, config, qzone)
+    })
+    if (config.enablePublishTool && config.allowUserIds.length) {
+        ctx.plugin({
+            name: 'livingdiary-publish-tool',
+            inject: ['tools', 'agents'],
+            apply: ctx => registerPublishTool(ctx, config, qzone)
+        })
+    }
 }
