@@ -1,4 +1,5 @@
 import type { QzonePost } from 'qzone-sdk'
+import { dailyDigestResultLabels, type DailyDigestReport } from '../daily-digest/report.js'
 import { cookiePlatformLabel } from '../qzone/cookie-source.js'
 import type { LivingDiaryStatus } from '../qzone/service.js'
 
@@ -37,7 +38,8 @@ export function formatFeedList(items: readonly QzonePost[]): string {
 }
 
 export function formatStatus(
-    status: LivingDiaryStatus
+    status: LivingDiaryStatus,
+    digest: DailyDigestReport | null
 ): string {
     const lines: string[] = []
     lines.push(
@@ -71,6 +73,12 @@ export function formatStatus(
         )
     } else {
         lines.push('自动续绑：正常')
+    }
+    if (digest) {
+        const trigger = digest.trigger === 'scheduled' ? '定时' : '手动'
+        lines.push(`每日日记：${formatTime(digest.triggeredAt)}（${trigger}）：${dailyDigestResultLabels[digest.result]}`)
+    } else {
+        lines.push('每日日记：未运行')
     }
     return lines.join('\n')
 }

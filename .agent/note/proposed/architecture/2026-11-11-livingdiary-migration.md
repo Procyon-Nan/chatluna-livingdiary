@@ -39,5 +39,5 @@ Verified with one group alternating between unauthorized and authorized users: a
 ## Migration progress
 
 - [x] Space commands and conversational publishing: build the plugin, verify the caller allowlist and the SDK write count with a simulated publisher, and read one real self-feed entry using the configured OneBot account. Milky has adapter tests; live Milky verification is pending.
-- [ ] Daily diary: migrate manual and scheduled runs, preset rendering, and selection of today's memories.
+- [x] Daily diary: manual and scheduled runs share one task per instance. Tested chat and character presets, selection of the newest 100 of 120 eligible memories, cancellation, and single writes with a simulated publisher. Verified the v2 model runtime with a simulated provider.
 - [ ] Automatic interactions: migrate polling, comment thread selection, media handling, and cancellation.

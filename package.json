@@ -40,11 +40,24 @@
     "peerDependencies": {
         "@satorijs/core": "^4.6.1",
         "@chatluna/agent": "*",
+        "@chatluna/ai": "*",
+        "@chatluna/ai-runtime": "*",
+        "@chatluna/core": "*",
+        "@chatluna/preset": "*",
+        "@chatluna/prompt": "*",
+        "@chatluna/ui-schema-registry": "*",
         "@chatluna/utils": "*",
         "chatluna": "^2.0.0-alpha.0",
+        "chatluna-plugin-livingmemory": ">=0.0.5",
         "cordis": "^4.0.0-rc.12"
     },
+    "peerDependenciesMeta": {
+        "chatluna-plugin-livingmemory": {
+            "optional": true
+        }
+    },
     "devDependencies": {
+        "@chatluna/engine-character": "*",
         "@chatluna/permission": "*",
         "@chatluna/session": "*",
         "@chatluna/storage-files": "*",

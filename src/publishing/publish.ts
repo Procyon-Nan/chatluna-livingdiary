@@ -31,7 +31,7 @@ export function readableError(error: unknown, prefix: string): string {
     return `${prefix}：${reason}`
 }
 
-const messages: Record<MutationOutcome, string> = {
+export const publishOutcomeMessages: Record<MutationOutcome, string> = {
     verified: '发布成功（已经读取确认）。',
     'already-applied': '空间已处于目标状态，未重复写入。',
     accepted: '空间已接受发布请求，稍后可用 qzone.feeds 核对。',
@@ -57,7 +57,7 @@ export async function publishPost(ctx: Context, qzone: Pick<QzoneManager, 'publi
             ...(signal ? { signal } : {}),
             ...(images.length ? { images } : {})
         })
-        return { outcome: result.outcome, message: messages[result.outcome] }
+        return { outcome: result.outcome, message: publishOutcomeMessages[result.outcome] }
     } catch (error) {
         signal?.throwIfAborted()
         const prefix = error instanceof ImageReadError ? `第 ${images.length + 1} 张配图` : '发布动态失败'

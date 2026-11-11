@@ -1,6 +1,9 @@
 import type { Context } from 'cordis'
 import type { Config } from './config.js'
+import { registerPersonaSelector } from './config.js'
 import { registerCommands } from './commands/index.js'
+import { registerDailyDigest } from './daily-digest/index.js'
+import type { RuntimeReports } from './daily-digest/report.js'
 import { registerPublishTool } from './publishing/tool.js'
 import { createQzoneService } from './qzone/service.js'
 
@@ -13,11 +16,18 @@ export const inject = ['satori'] as const
 export function apply(ctx: Context, config: Config) {
     const qzone = createQzoneService(ctx, config)
     ctx.effect(() => () => qzone.close())
+    const reports: RuntimeReports = { digest: null }
+    ctx.inject(['schemas', 'presets'], registerPersonaSelector)
 
     ctx.plugin({
         name: 'livingdiary-commands',
         inject: ['koishi'],
-        apply: ctx => registerCommands(ctx, config, qzone)
+        apply: ctx => registerCommands(ctx, config, qzone, reports)
+    })
+    ctx.plugin({
+        name: 'livingdiary-daily-digest',
+        inject: ['livingmemory', 'presets', 'prompt', 'chatluna', 'ai'],
+        apply: ctx => registerDailyDigest(ctx, config, qzone, reports)
     })
     if (config.enablePublishTool && config.allowUserIds.length) {
         ctx.plugin({

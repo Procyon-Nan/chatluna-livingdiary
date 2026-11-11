@@ -3,7 +3,7 @@ import test from 'node:test'
 import { h } from 'koishi'
 import { registerCommands } from '../../lib/commands/index.js'
 
-function commands(service, allowUserIds = ['23']) {
+function commands(service, allowUserIds = ['23'], reports = { digest: null }) {
     const actions = new Map()
     const ctx = {
         command(declaration, _desc, { owner }) {
@@ -15,7 +15,7 @@ function commands(service, allowUserIds = ['23']) {
             }
         }
     }
-    registerCommands(ctx, { allowUserIds, feedsDefaultLimit: 5 }, service)
+    registerCommands(ctx, { allowUserIds, feedsDefaultLimit: 5 }, service, reports)
     return actions
 }
 const session = { userId: '23', platform: 'onebot' }
@@ -58,6 +58,15 @@ test('空间昵称和正文中的消息标签只按文字显示', async () => {
     assert.ok(elements[0].attrs.content.includes(nickname + '：' + content))
 })
 
+test('状态展示最近一次日记的触发方式、时间和处理结果', async () => {
+    const reports = { digest: null }
+    const service = { status: () => ({ bot: null, client: { initialized: false, rebind: { consecutiveFailures: 0 } } }) }
+    const status = commands(service, ['23'], reports).get('qzone.status')
+    assert.match(await status({ session }), /每日日记：未运行/)
+    reports.digest = { trigger: 'scheduled', triggeredAt: '2026-11-11T03:00:00.000Z', result: 'skipped-empty', detail: '当日无记忆' }
+    assert.match(await status({ session }), /每日日记：.*2026.*（定时）：跳过（当日无记忆）/)
+})
+
 test('手动发布仅读取顶层文本和配图，表情及引用中的配图不会发布', async () => {
     const actions = new Map()
     const bodies = []
@@ -72,7 +81,7 @@ test('手动发布仅读取顶层文本和配图，表情及引用中的配图�
             return { async getTempFile(id) { lookups.push(id); return { name: 'a.png', size: 1, data: Buffer.from([7]) } } }
         }
     }
-    registerCommands(ctx, { allowUserIds: ['23'] }, { async publish(req) { bodies.push(req); return { outcome: 'verified' } } })
+    registerCommands(ctx, { allowUserIds: ['23'] }, { async publish(req) { bodies.push(req); return { outcome: 'verified' } } }, { digest: null })
     const response = await actions.get('qzone.publish')({ session }, [
         h.text('测试内容'), h('face', {}, h.image('https://example.invalid/face.png')),
         h('quote', {}, h.text('引用正文'), h.image('https://example.invalid/quoted.png')), h.image('storage://a')

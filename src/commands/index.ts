@@ -5,6 +5,7 @@ import type { Config } from '../config.js'
 import { isUserAllowed } from '../access.js'
 import { publishPost, readableError } from '../publishing/publish.js'
 import type { QzoneService } from '../qzone/service.js'
+import type { RuntimeReports } from '../daily-digest/report.js'
 import { formatFeedList, formatStatus } from './format.js'
 
 export const FEEDS_LIMIT_MAX = 10
@@ -44,10 +45,10 @@ export function extractPublishParts(elements: readonly h[]): PublishParts {
     return { content: content.trim(), imageUrls }
 }
 
-export function registerCommands(ctx: Context, config: Config, service: QzoneService): void {
+export function registerCommands(ctx: Context, config: Config, service: QzoneService, reports: RuntimeReports): void {
     const owner = 'livingdiary'
     const denial = '未授权：你的账号不在 allowUserIds 白名单中。'
-    const usage = '子指令：qzone.feeds 读取动态；qzone.publish 发布动态（可附图）；qzone.status 查看登录态。'
+    const usage = '子指令：qzone.feeds 读取动态；qzone.publish 发布动态（可附图）；qzone.status 查看状态；qzone.digest 根据今天的记忆写日记（需 LivingMemory 和模型服务）。'
 
     ctx.command('qzone', 'QQ 空间生活日记', { owner }).usage(usage).action(() => usage)
     ctx.command('qzone.feeds [count:posint]', '读取 QQ 空间动态', { owner })
@@ -74,6 +75,6 @@ export function registerCommands(ctx: Context, config: Config, service: QzoneSer
         })
     ctx.command('qzone.status', '查看 QQ 空间登录态', { owner })
         .action(({ session }) => isUserAllowed(session?.userId, config.allowUserIds, session?.platform)
-            ? formatStatus(service.status())
+            ? formatStatus(service.status(), reports.digest)
             : denial)
 }

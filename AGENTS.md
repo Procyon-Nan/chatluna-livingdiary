@@ -42,13 +42,14 @@ LivingDiary 是 ChatLuna v2 的 QQ 空间插件，npm 包名为 `chatluna-plugin
 ```text
 livingdiary/
 ├── src/
-│   ├── index.ts     # 装配 QQ 空间客户端、聊天命令和模型工具
-│   ├── config.ts    # 账号选择、白名单、读取、发布和续绑配置
+│   ├── index.ts     # 装配 QQ 空间客户端、命令、模型工具与每日日记
+│   ├── config.ts    # 空间账号、白名单、发布、续绑和日记配置
 │   ├── access.ts    # 校验请求来源平台和用户 QQ 号
 │   ├── qzone/       # 获取登录态、管理 SDK 客户端及续绑
 │   ├── commands/    # qzone 命令、动态和状态的展示
+│   ├── daily-digest/ # 日记调度、记忆筛选、预设渲染、模型决策与运行报告
 │   └── publishing/  # 空间发布工具、配图读取及发布结果
-├── tests/           # 命令与工具授权、空间读写和生命周期测试
+├── tests/           # 命令与工具授权、空间读写、每日日记和生命周期测试
 ├── scripts/clean.mjs # 清理编译产物与增量编译记录
 ├── package.json     # 包信息、导出入口、依赖与构建、发布脚本
 ├── tsconfig.json    # 插件的 TypeScript 配置
@@ -65,7 +66,7 @@ livingdiary/
 
 | 文档 | 内容 |
 | --- | --- |
-| [README.md](README.md) | 空间账号与白名单配置、命令及发布工具用法、构建与发布方法 |
+| [README.md](README.md) | 空间账号与白名单配置、命令、发布工具、每日日记、构建与发布方法 |
 | [CHANGELOG.md](CHANGELOG.md) | 各版本的变更记录 |
 | [.agent/note/README.zh.md](.agent/note/README.zh.md) | Agent Note 的撰写格式、分类、状态转换和归档规则 |
 
