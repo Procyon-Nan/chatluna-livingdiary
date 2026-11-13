@@ -41,6 +41,7 @@ LivingDiary 是 ChatLuna v2 的 QQ 空间插件，npm 包名为 `chatluna-plugin
 
 ```text
 livingdiary/
+├── client/          # WebUI 日记本、插件配置与使用指南
 ├── src/
 │   ├── index.ts     # 装配空间客户端、命令、发布工具、日记与自动互动
 │   ├── config.ts    # 账号、模型、日记、互动及各自的授权设置
@@ -53,12 +54,15 @@ livingdiary/
 │   ├── qzone/       # 获取登录态、管理 SDK 客户端及续绑
 │   ├── commands/    # qzone 命令、动态和状态的展示
 │   ├── daily-digest/ # 日记调度、记忆筛选、模型决策与运行报告
+│   ├── journal/     # 日记和写作素材的持久化、查询及界面数据类型
+│   ├── webui.ts     # 注册日记查询、配置入口和前端资源
 │   ├── auto-interaction/ # 动态轮询、评论线程、媒体读取与互动决策
 │   └── publishing/  # 空间发布工具、配图读取及发布结果
 ├── tests/           # 空间命令与工具、日记、自动互动和生命周期测试
-├── scripts/clean.mjs # 清理编译产物与增量编译记录
+├── scripts/         # 构建 WebUI、清理编译产物与增量编译记录
 ├── package.json     # 包信息、导出入口、依赖与构建、发布脚本
 ├── tsconfig.json    # 插件的 TypeScript 配置
+├── tsconfig.client.json # WebUI 类型检查
 ├── .gitignore       # 依赖与构建产物的忽略规则
 ├── AGENTS.md        # 项目协作规范
 ├── README.md        # 插件说明

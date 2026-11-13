@@ -9,6 +9,8 @@ import {
     QzoneAuthError,
     QzoneCancelledError,
     type QzoneClient,
+    type QzoneLogger,
+    type QzoneSessionInput,
     type QzonePost,
     type ReplyOptions,
     type SessionInfo
@@ -58,7 +60,7 @@ export interface QzoneManagerDeps {
     readonly currentBot: () => Pick<CookieBot, 'platform' | 'selfId'> | undefined
     /** 获取一份通过验收的 Cookie；失败视为一次续绑失败。 */
     readonly acquire: () => Promise<QzoneCookieGrant>
-    readonly createClient: (session: Pick<QzoneCookieGrant, 'accountId' | 'cookies'>) => QzoneClient
+    readonly createClient: (session: QzoneSessionInput & { accountId: string }, observe?: QzoneLogger) => QzoneClient
     readonly logger: Pick<Logger, 'info' | 'warn' | 'error'>
     readonly rebind: RebindOptions
 }
@@ -109,6 +111,24 @@ export class QzoneManager {
         return this.#runWrite('publish', '发布动态', request.signal, (client) =>
             client.publishPost(request)
         )
+    }
+
+    /** SDK 也会用最近动态的相同正文确认发布；日记只接受按回执 ID 读取的详情。 */
+    publishDiary(request: Pick<PublishPostOptions, 'content' | 'signal'>): Promise<boolean> {
+        return this.#runWrite('publish', '发布日记', request.signal, async client => {
+            let readById = false
+            // 单次发布独享客户端，其他命令或轮询读详情不会影响这篇日记。
+            const diary = this.#deps.createClient(client.exportSession(), event => {
+                if (event.phase === 'request.start' &&
+                    (event.endpoint === 'post.detail.legacy' || event.endpoint === 'post.detail.h5')) readById = true
+            })
+            try {
+                const { outcome } = await diary.publishPost(request)
+                return readById && outcome === 'verified'
+            } finally {
+                await diary.close()
+            }
+        })
     }
 
     /** 评论动态；登录态失效时仅触发续绑，不自动重放。 */

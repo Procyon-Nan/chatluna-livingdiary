@@ -5,11 +5,13 @@ import { isUserAllowed } from '../access.js'
 import type { Config } from '../config.js'
 import type { QzoneManager } from '../qzone/manager.js'
 import type { RuntimeReports } from '../status.js'
+import type { DiaryJournal } from '../journal/repository.js'
 import { dailyDigestResultLabels } from './report.js'
 import { DailyDigestRuntime } from './runtime.js'
 import { runDailyDigest } from './workflow.js'
 
-export function registerDailyDigest(ctx: Context, config: Config, qzone: Pick<QzoneManager, 'publish'>, reports: RuntimeReports) {
+export function registerDailyDigest(ctx: Context, config: Config, qzone: Pick<QzoneManager, 'publishDiary'>,
+    reports: RuntimeReports, journal: DiaryJournal) {
     const settings = {
         presetId: config.personaPresetId.trim(),
         model: config.mainModel.trim(),
@@ -20,7 +22,7 @@ export function registerDailyDigest(ctx: Context, config: Config, qzone: Pick<Qz
     if (!settings.presetId) missing.push('人设预设')
     if (!settings.model) missing.push('主模型')
     const runtime = new DailyDigestRuntime(
-        (trigger, signal, startedAt) => runDailyDigest(ctx, qzone, settings, trigger, signal, startedAt),
+        (trigger, signal, startedAt) => runDailyDigest(ctx, qzone, journal, settings, trigger, signal, startedAt),
         reports, ctx.logger
     )
     ctx.effect(() => () => runtime.stop())

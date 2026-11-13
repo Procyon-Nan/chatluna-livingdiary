@@ -12,6 +12,44 @@ const rebind = { minIntervalSeconds: 0, backoffSeconds: 2, maxBackoffSeconds: 3,
 const logger = { info() {}, error() {}, warn() {} }
 const auth = () => { throw new QzoneAuthError('expired') }
 
+test('日记只认可回执 ID 对应的详情，列表唯一命中同文也不算；每次只提交一次', async t => {
+    const content = '今天的日记'
+    for (const scenario of ['详情命中', '详情缺失', '同文命中', '列表为空', '回执不明']) {
+        await t.test(scenario, async () => {
+            const withId = scenario.startsWith('详情')
+            const post = { tid: 'diary-id', uin: grant.accountId, content, created_time: Math.floor(Date.now() / 1000) }
+            let writes = 0, detailReads = 0
+            const manager = new QzoneManager({ logger, rebind, acquire: async () => grant,
+                createClient: (session, observe) => new QzoneClient({ session, logger: observe, fetch: async url => {
+                    const { pathname, searchParams } = new URL(url)
+                    if (pathname.endsWith('emotion_cgi_publish_v6')) {
+                        writes++
+                        if (scenario === '回执不明') return new Response('invalid', { status: 500 })
+                        return Response.json(withId ? { code: 0, tid: post.tid } : { code: 0 })
+                    }
+                    if (pathname.endsWith('emotion_cgi_msgdetail_v6')) {
+                        detailReads++
+                        assert.equal(searchParams.get('tid'), post.tid)
+                        return Response.json(scenario === '详情命中' ? post : { code: -100 })
+                    }
+                    const msglist = scenario === '同文命中' ? [post] : []
+                    return new Response('<script>window.shine0callback=function(){return "ab"};var FrontPage={data:' +
+                        JSON.stringify([null, { data: { msglist } }]) + '};</script>')
+                } })
+            })
+            try {
+                assert.equal(await manager.publishDiary({ content }), scenario === '详情命中')
+                assert.equal(writes, 1)
+                assert.equal(detailReads, withId ? 1 : 0)
+                if (scenario === '同文命中') {
+                    // 同一份网络回包：SDK 普通发帖确实会因列表命中返回 verified。
+                    assert.equal((await manager.publish({ content })).outcome, 'verified')
+                }
+            } finally { await manager.close() }
+        })
+    }
+})
+
 test('自动选在线 OneBot，其次 Milky；指定 selfId/协议后不借其他机器人的登录态', () => {
     const bots = [
         { platform: 'onebot', selfId: '1', status: 2 },

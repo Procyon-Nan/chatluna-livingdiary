@@ -16,10 +16,11 @@ export function createQzoneService(ctx: Context, config: QzoneConfig) {
             if (!bot) throw new NoBotAvailableError('没有可用的 OneBot/Milky 机器人（未上线或 platform/selfId 不匹配）')
             return acquireQzoneCookies(bot)
         },
-        createClient: session => {
+        createClient: (session, observe) => {
             const client = new QzoneClient({
                 session,
                 logger(event) {
+                    observe?.(event)
                     const parts = ['qzone-sdk', event.phase, event.endpoint]
                     if (event.statusCode !== undefined) parts.push(`HTTP ${event.statusCode}`)
                     if (event.errorCode) parts.push(`code=${event.errorCode}`)

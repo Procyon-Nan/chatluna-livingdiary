@@ -27,17 +27,23 @@ async function fixture(t, kind = 'chat') {
     const preset = { id: 'p', name: '人设 A', kind, status: 'ok', data }
     const calls = [], writes = [], reads = []
     const rows = Array.from({ length: 120 }, (_, i) => ({
-        status: 'active', createdAt: new Date(+midnight + i * 60000), type: 'plan', content: `记忆[${i}]`, sentiment: '愉快'
+        id: `m${i}`, status: 'active', createdAt: new Date(+midnight + i * 60000), type: 'plan', content: `记忆[${i}]`, sentiment: '愉快'
     })).reverse()
     const ctx = { logger: quiet, prompt: cordis.prompt,
         presets: { get: id => id === preset.id ? preset : undefined, blocks: p => (p.kind === 'chat' ? chatKind : characterKind).blocks(p.id, p.data) },
         get: () => ({ repository: { listEntriesByPreset(id) { reads.push(id); return rows } } }),
         chatluna: { chat(input) { calls.push(input); return Promise.resolve(result({ action: 'publish', content: text })) } }
     }
-    const qzone = { async publish(input) { writes.push(input); return { outcome: 'verified' } } }
-    const run = (overrides = {}, signal = new AbortController().signal) => runDailyDigest(ctx, qzone,
+    const qzone = { async publishDiary(input) { writes.push(input); return true } }
+    const saved = [], outcomes = []
+    const journal = {
+        async save(entry, at) { saved.push({ entry, at }); return String(saved.length) },
+        async beginPublication() {},
+        async finishPublication(id, verified) { outcomes.push({ id, status: verified ? 'published' : 'failed' }) }
+    }
+    const run = (overrides = {}, signal = new AbortController().signal) => runDailyDigest(ctx, qzone, journal,
         { ...settings, ...overrides }, 'manual', signal, start)
-    return { ctx, qzone, rows, preset, reads, calls, writes, run }
+    return { ctx, qzone, journal, saved, outcomes, rows, preset, reads, calls, writes, run }
 }
 
 for (const kind of ['chat', 'character']) {
@@ -62,6 +68,9 @@ for (const kind of ['chat', 'character']) {
         assert.match(prompt, /计划\|情绪:愉快/)
         assert.equal(api.writes.length, 1)
         assert.equal(api.writes[0].content, text)
+        assert.deepEqual(api.saved, [{ at: start, entry: { presetId: 'p', presetName: '人设 A', content: text,
+            memories: Array.from({ length: 100 }, (_, i) => ({ id: `m${i + 20}`, content: `记忆[${i + 20}]` })) } }])
+        assert.deepEqual(api.outcomes, [{ id: '1', status: 'published' }])
     })
 }
 
@@ -83,7 +92,7 @@ test('当日窗口包含本地零点和任务开始时刻，不包含前一天�
     const api = await fixture(t)
     api.rows.length = 0
     for (const [label, time] of [['昨夜', +midnight - 1], ['本地零点', +midnight], ['开始时刻', +start], ['未来', +start + 1]]) {
-        api.rows.push({ type: 'plan', status: 'active', createdAt: new Date(time), content: label })
+        api.rows.push({ id: label, type: 'plan', status: 'active', createdAt: new Date(time), content: label })
     }
     await api.run()
     const body = api.calls[0].messages[0].content[0].text
@@ -103,18 +112,37 @@ test('当天仅整理或编辑了旧记忆时，日记跳过，不调用模型�
     assert.equal(api.writes.length, 0)
 })
 
-test('日记模型可跳过；空间已受理、结果未知和写失败分别报告，不重发', async t => {
+test('模型跳过则不存不发；未验证和空间写入异常都记为发布失败，不重发', async t => {
     const api = await fixture(t)
     api.ctx.chatluna.chat = () => Promise.resolve(result({ action: 'skip' }))
     assert.equal((await api.run()).result, 'skipped-by-model')
+    assert.deepEqual(api.saved, [])
     assert.deepEqual(api.writes, [])
     api.ctx.chatluna.chat = () => Promise.resolve(result({ action: 'publish', content: text }))
     let writes = 0
-    for (const outcome of ['accepted', 'unknown', 'publish-failed']) {
-        api.qzone.publish = async () => { writes++; if (outcome === 'publish-failed') throw Error('write error'); return { outcome } }
-        assert.equal((await api.run()).result, outcome)
+    for (const throws of [false, true]) {
+        api.qzone.publishDiary = async () => { writes++; if (throws) throw Error('write error'); return false }
+        assert.equal((await api.run()).result, 'publish-failed')
     }
-    assert.equal(writes, 3)
+    assert.equal(writes, 2)
+    assert.deepEqual(api.outcomes.map(row => row.status), ['failed', 'failed'])
+})
+
+test('先存日记再发空间；归档失败不发送，回写失败保留已知的发布结果', async t => {
+    const api = await fixture(t)
+    const save = api.journal.save
+    api.journal.save = async () => { throw Error('database offline') }
+    assert.equal((await api.run()).result, 'failed')
+    assert.deepEqual(api.writes, [])
+    api.journal.save = save
+    api.journal.beginPublication = async () => { throw Error('database offline') }
+    assert.equal((await api.run()).result, 'failed')
+    assert.deepEqual(api.writes, [])
+    api.journal.beginPublication = async () => {}
+    api.journal.finishPublication = async () => { throw Error('database offline') }
+    const report = await api.run()
+    assert.equal(report.result, 'published')
+    assert.match(report.detail, /本地发布状态未能更新/)
 })
 
 test('格式错误带工具反馈纠正；模型异常共用七次预算，两次之间等五秒', async () => {
@@ -151,13 +179,14 @@ test('停用会中止在途模型与等待登录的发布；已提交的写结�
     assert.deepEqual(api.writes, [])
     const second = new AbortController()
     api.ctx.chatluna.chat = () => Promise.resolve(result({ action: 'publish', content: text }))
-    api.qzone.publish = async ({ signal }) => {
+    api.qzone.publishDiary = async ({ signal }) => {
         assert.equal(signal, second.signal)
         second.abort()
         signal.throwIfAborted()
     }
     await assert.rejects(api.run({}, second.signal), { name: 'AbortError' })
+    assert.deepEqual(api.outcomes, [{ id: '1', status: 'failed' }])
     const third = new AbortController()
-    api.qzone.publish = async () => { third.abort(); return { outcome: 'accepted' } }
-    assert.equal((await api.run({}, third.signal)).result, 'accepted')
+    api.qzone.publishDiary = async () => { third.abort(); return true }
+    assert.equal((await api.run({}, third.signal)).result, 'published')
 })

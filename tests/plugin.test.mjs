@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { Context } from 'cordis'
 import Database from '@cordisjs/plugin-database'
+import SQLiteDriver from '@cordisjs/plugin-database-sqlite'
 import { Session } from '@satorijs/core'
 import Koishi from 'koishi'
 import SchemaRegistry from '@chatluna/ui-schema-registry'
@@ -9,8 +10,10 @@ import * as diary from '../lib/index.js'
 
 test('基础命令独立运行；日记随记忆服务启停并保留上次结果', async t => {
     const ctx = new Context()
+    ctx.baseUrl = process.cwd()
     t.after(() => ctx.fiber.dispose())
     await ctx.plugin(Database)
+    await ctx.plugin(SQLiteDriver, { path: ':memory:' })
     await ctx.plugin(Koishi, { prefix: [] })
     const preset = { id: 'diary', name: '星星', kind: 'character', status: 'ok' }
     ctx.provide('presets', { list: () => [preset], get: id => id === preset.id ? preset : undefined })
@@ -23,9 +26,8 @@ test('基础命令独立运行；日记随记忆服务启停并保留上次结�
     async function run(userId, command = 'qzone.status') {
         const session = new Session(bot, {
             type: 'message', selfId: bot.selfId, platform: bot.platform, user: { id: userId },
-            channel: { id: '12345', type: 0 }, message: { id: '1' }
+            guild: { id: '12345' }, channel: { id: '12345', type: 0 }, message: { id: '1' }
         })
-        Reflect.set(session, 'user', { authority: 1 })
         return (await session.execute(command, true)).join('')
     }
 

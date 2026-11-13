@@ -84,7 +84,9 @@ test('关闭定时后仍可手动写日记；先验证发起人，空记忆不�
             return { action(fn) { action = fn } }
         }
     }
-    registerDailyDigest(ctx, config, { publish: assert.fail }, reports)
+    registerDailyDigest(ctx, config, { publishDiary: assert.fail }, reports, {
+        save: assert.fail, beginPublication: assert.fail, finishPublication: assert.fail
+    })
     assert.match(await action({ session: { platform: 'discord', userId: '123' } }), /未授权/)
     assert.equal(reads, 0)
     assert.match(await action({ session: { platform: 'onebot', userId: '123' } }), /当日无记忆/)

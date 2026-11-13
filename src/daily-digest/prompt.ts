@@ -3,6 +3,7 @@ import { escapeXmlText, formatXmlBlock } from '../prompt-format.js'
 export const digestToolName = 'publish_daily_digest'
 
 export interface DigestMemoryEntry {
+    readonly id: string
     readonly createdAt: Date
     readonly type: string
     readonly content: string

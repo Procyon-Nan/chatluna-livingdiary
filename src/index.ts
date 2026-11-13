@@ -7,6 +7,8 @@ import { registerAutoInteraction } from './auto-interaction/index.js'
 import type { RuntimeReports } from './status.js'
 import { registerPublishTool } from './publishing/tool.js'
 import { createQzoneService } from './qzone/service.js'
+import { createDiaryJournal } from './journal/repository.js'
+import { registerWebUI } from './webui.js'
 
 export { Config } from './config.js'
 
@@ -25,10 +27,14 @@ export function apply(ctx: Context, config: Config) {
         inject: ['koishi'],
         apply: ctx => registerCommands(ctx, config, qzone, reports)
     })
-    ctx.plugin({
-        name: 'livingdiary-daily-digest',
-        inject: ['livingmemory', 'presets', 'prompt', 'chatluna', 'ai'],
-        apply: ctx => registerDailyDigest(ctx, config, qzone, reports)
+    ctx.inject(['model', 'database'], scope => {
+        const journal = createDiaryJournal(scope)
+        scope.plugin({
+            name: 'livingdiary-daily-digest',
+            inject: ['livingmemory', 'presets', 'prompt', 'chatluna', 'ai'],
+            apply: ctx => registerDailyDigest(ctx, config, qzone, reports, journal)
+        })
+        scope.inject(['chatluna_webui', 'presets'], ui => registerWebUI(ui, ctx, journal, config.personaPresetId.trim()))
     })
     ctx.plugin({
         name: 'livingdiary-auto-interaction',

@@ -1,0 +1,61 @@
+tab.journal: 日记
+tab.settings: 插件配置
+tab.guide: 插件使用指南
+offline: 与实例的连接已中断，重新连接后会自动更新。
+
+journal.presetsTab: 预设
+journal.belongsTo: 此册属于
+journal.bookHistory: 从 {date} 写起，已有 {count} 天留下了日记。
+journal.firstPage: 第一页，等你落笔。
+journal.preset: 选择预设
+journal.noPreset: 还没有日记本
+journal.noPresetHint: 在插件配置中选择写日记的空间预设。
+journal.date: 日期
+journal.empty: 这个预设还没有写过日记
+journal.emptyDay: 这一天没有日记
+journal.pages: 日记翻页
+journal.previousEntry: 当天上一篇
+journal.nextEntry: 当天下一篇
+journal.memoryTitle: 参考记忆
+journal.noMemories: 这篇日记没有参考记忆。
+status.unconfirmed: 未发布到 QQ 空间
+status.published: 已发布到 QQ 空间
+status.failed: 发布到 QQ 空间失败
+
+settings.noEntry: 找不到当前 LivingDiary 实例的配置。
+settings.noSchema: 这个插件实例没有提供配置表单。
+settings.scope: 这里修改的是当前 LivingDiary 实例的设置。
+settings.save: 保存设置
+settings.discard: 放弃更改
+settings.saved: 插件配置已保存
+
+guide.openSettings: 打开插件配置
+guide.intro: 从连接空间账号、写下第一篇日记开始，也可以在这里了解如何发布说说，以及让机器人自动评论和回复。
+guide.contents: 本页目录
+guide.start: 第一次使用
+guide.account.title: 连接空间账号
+guide.configureDiary.title: 选择写日记的预设和模型
+guide.schedule.title: 手动写作或定时写作
+guide.read.title: 翻阅日记和参考记忆
+guide.receipt.title: 如何确认日记是否发到了空间？
+guide.interactionConfig.title: 选择互动对象
+guide.comments.title: 设置评论和回复
+guide.account: 保持 OneBot 或 Milky 机器人在线，LivingDiary 会使用它的空间。接了多个账号时，在「空间账号与命令」的 selfId 中填写要使用的机器人 QQ 号。把自己的 QQ 号加入 allowUserIds，就能使用空间命令。
+guide.diary: 写下第一篇日记
+guide.configureDiary: 启用 LivingMemory，并在「空间人设与模型」中选择空间预设和写日记的主模型。机器人会以这个预设的口吻，从该预设当天新建且仍活跃的记忆中取材。
+guide.schedule: 发送 qzone.digest 立即写作，或在「每日日记」中开启定时写作。默认在服务器本地时间 23:50 开始，最多取最近 100 条记忆。如果没有当日素材，或模型决定跳过，就不会产生新日记。
+guide.read: 写好的正文先保存在「日记」，再尝试发送到 QQ 空间。按预设和日期翻阅，左页是日记正文，右页是当时交给模型的全部参考记忆。一天可以保存多篇。
+guide.commands: 空间命令与对话发布
+guide.receipt: 「未发布」表示日记已保存，还没有尝试发送。每篇日记只发一次。QQ 返回动态 ID 后会立即按 ID 读取动态，读到才标为「已发布」；其余结果都记为「发布失败」。日记和参考记忆会保留。
+guide.cmd.status: qzone.status
+guide.use.status: 查看登录态、最近一次日记的结果和互动情况。
+guide.cmd.feeds: qzone.feeds 3
+guide.use.feeds: 读取机器人最近的三条空间动态。
+guide.cmd.publish: qzone.publish 今天下雨了
+guide.use.publish: 发布自己的文字或图片；同一条消息最多附 9 张图。
+guide.cmd.digest: qzone.digest
+guide.use.digest: 现在写一篇日记；写成后会尝试发布到空间。
+guide.tool: 开启 enablePublishTool 后，命令白名单里的用户也可以在对话里请机器人发说说。
+guide.interactions: 自动评论与回复
+guide.interactionConfig: 在「空间人设与模型」中选择空间预设和互动模型，再在「自动互动」的 interactionAllowUserIds 中加入互动对象的 QQ 号。这份名单与命令白名单分开；默认开启名单限制，名单为空时不会与任何人互动。
+guide.comments: 开启 enableFriendPostComment，机器人会考虑评论好友的新动态。interactionMonitorPostLimit 控制跟进多少条动态的评论区，设为 0 就停止跟进回复。上线时先记住现有内容，从下一次轮询起处理新增动态或评论。
