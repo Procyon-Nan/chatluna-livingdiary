@@ -5,7 +5,7 @@
         "registry": "https://registry.npmjs.org/",
         "access": "public"
     },
-    "description": "让机器人在 QQ 空间记录和分享日常。",
+    "description": "LivingSystem 生态下构筑的 QQ 空间插件，提供动态发布、评论与回复能力。联动 livingmemory 插件实现 bot 的人格化日记记录与发布功能。",
     "type": "module",
     "engines": {
         "node": ">=24.0.0"
@@ -87,8 +87,8 @@
     },
     "cordis": {
         "description": {
-            "zh": "让机器人在 QQ 空间记录和分享日常。",
-            "en": "Let your bot share everyday moments on Qzone."
+            "zh": "LivingSystem 生态下构筑的 QQ 空间插件，提供动态发布、评论与回复能力。联动 livingmemory 插件实现 bot 的人格化日记记录与发布功能。",
+            "en": "A Qzone plugin in the LivingSystem ecosystem for publishing posts, commenting, and replying. With LivingMemory, your bot can write and share diary entries in its own voice."
         }
     }
 }

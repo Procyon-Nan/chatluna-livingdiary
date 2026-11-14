@@ -1,6 +1,6 @@
 # chatluna-plugin-livingdiary
 
-让机器人在 QQ 空间记录和分享日常。可以用命令读动态、发说说，也可以让对话中的机器人帮你发布。
+LivingSystem 生态下构筑的 QQ 空间插件，提供动态发布、评论与回复能力。联动 livingmemory 插件实现 bot 的人格化日记记录与发布功能。
 
 ## 使用
 
